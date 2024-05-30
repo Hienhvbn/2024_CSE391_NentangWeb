@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ứng dụng quản lí sinh viên</title>
+    <style>
+      /* CSS cơ bản cho giao diện */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+      input[type="text"],
+      input[type="date"] {
+        width: 100%;
+        padding: 8px;
+      }
+      button {
+        padding: 8px 16px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Thêm sinh viên</h2>
+    <form id="formSinhVien">
+      Họ tên: <input type="text" id="hoTen" /><br /><br />
+      Mã SV: <input type="text" id="maSV" /><br /><br />
+      Ngày sinh: <input type="date" id="ngaySinh" /><br /><br />
+      Lớp: <input type="text" id="lop" /><br /><br />
+      <button type="submit">Thêm</button>
+    </form>
+    <h2>Danh sách sinh viên</h2>
+    <table id="bangSinhVien">
+      <thead>
+        <tr>
+          <th>Họ tên</th>
+          <th>Mã SV</th>
+          <th>Ngày sinh</th>
+          <th>Lớp</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const studentForm = document.getElementById("formSinhVien");
+        const studentTableBody = document.querySelector("#bangSinhVien tbody");
+
+        // Load students from localStorage
+        let students =
+          JSON.parse(localStorage.getItem("danhSachSinhVien")) || [];
+
+        // Function to render the student table
+        function renderTable() {
+          studentTableBody.innerHTML = "";
+          students.forEach((student, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${student.hoTen}</td>
+                <td>${student.maSV}</td>
+                <td>${student.ngaySinh}</td>
+                <td>${student.lop}</td>
+                <td>
+                    <button onclick="editStudent(${index})">Sửa</button>
+                    <button onclick="deleteStudent(${index})">Xóa</button>
+                </td>
+            `;
+            studentTableBody.appendChild(row);
+          });
+        }
+
+        function validateStudent(hoTen, maSV, ngaySinh, lop) {
+        if (!hoTen || !maSV || !ngaySinh || !lop) {
+            alert("Vui lòng điền đầy đủ thông tin.");
+            return false;
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(ngaySinh)) {
+            alert("Ngày sinh không hợp lệ. Định dạng hợp lệ: YYYY-MM-DD.");
+            return false;
+        }
+        return true;
+    }
+
+        // Add a new student
+        studentForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const hoTen = document.getElementById("hoTen").value;
+          const maSV = document.getElementById("maSV").value;
+          const ngaySinh = document.getElementById("ngaySinh").value;
+          const lop = document.getElementById("lop").value;
+
+          if (!validateStudent(hoTen, maSV, ngaySinh, lop)) {
+            return;
+        }
+
+          students.push({ hoTen, maSV, ngaySinh, lop });
+          localStorage.setItem("danhSachSinhVien", JSON.stringify(students));
+          renderTable();
+          studentForm.reset();
+        });
+
+        // Edit a student
+        window.editStudent = (index) => {
+          const student = students[index];
+          document.getElementById("hoTen").value = student.hoTen;
+          document.getElementById("maSV").value = student.maSV;
+          document.getElementById("ngaySinh").value = student.ngaySinh;
+          document.getElementById("lop").value = student.lop;
+
+          studentForm.onsubmit = (event) => {
+            event.preventDefault();
+            student.hoTen = document.getElementById("hoTen").value;
+            student.maSV = document.getElementById("maSV").value;
+            student.ngaySinh = document.getElementById("ngaySinh").value;
+            student.lop = document.getElementById("lop").value;
+
+            if (!validateStudent(hoTen, maSV, ngaySinh, lop)) {
+            return;
+        }
+
+            students[index] = student;
+            localStorage.setItem("danhSachSinhVien", JSON.stringify(students));
+            renderTable();
+            studentForm.reset();
+            studentForm.onsubmit = addStudent;
+          };
+        };
+
+        // Delete a student
+        window.deleteStudent = (index) => {
+          if (confirm("Bạn có chắc chắn muốn xóa sinh viên này không?")) {
+            students.splice(index, 1);
+            localStorage.setItem("danhSachSinhVien", JSON.stringify(students));
+            renderTable();
+          }
+        };
+
+        // Initial rendering of the table
+        renderTable();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Quản lý sinh viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="container mx-auto p-4">
+    <h2 class="text-2xl font-bold mb-4">Quản lý sinh viên</h2>
+    <div class="mb-4">
+        <label for="lop" class="block text-gray-700 text-sm font-bold mb-2">Chọn lớp:</label>
+        <select id="lop" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></select>
+    </div>
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold mb-2">Danh sách sinh viên</h3>
+        <button id="addStudentBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Thêm sinh viên</button>
+    </div>
+    <table id="bangSinhVien" class="table-auto w-full">
+        <thead>
+            <tr>
+                <th class="px-4 py-2">Họ tên</th>
+                <th class="px-4 py-2">Mã SV</th>
+                <th class="px-4 py-2">Ngày sinh</th>
+                <th class="px-4 py-2">Hành động</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <!-- Modal Form -->
+    <div id="formSinhVienModal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Thêm/Sửa Sinh Viên</h3>
+                        <div class="mt-2">
+                            <form id="formSinhVien">
+                                <div class="mb-4">
+                                    <label for="hoTen" class="block text-gray-700 text-sm font-bold mb-2">Họ tên:</label>
+                                    <input type="text" id="hoTen" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="maSV" class="block text-gray-700 text-sm font-bold mb-2">Mã SV:</label>
+                                    <input type="text" id="maSV" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="ngaySinh" class="block text-gray-700 text-sm font-bold mb-2">Ngày sinh:</label>
+                                    <input type="date" id="ngaySinh" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                                <div class="mb-4">
+                                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Lưu</button>
+                                    <button type="button" id="cancelBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Hủy</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    $(document).ready(function() {
+        let data = [];
+        let currentClassIndex = 0;
+        let editIndex = -1;
+    
+        // Đọc dữ liệu từ data.json và hiển thị danh sách lớp vào dropdown
+        $.getJSON("data.json", function(response) {
+            data = response;
+            renderClassOptions();
+            renderStudentTable();
+        });
+    
+        function renderClassOptions() {
+            const lopSelect = $("#lop");
+            lopSelect.empty();
+            data.forEach((lop, index) => {
+                lopSelect.append(`<option value="${index}">${lop.tenLop}</option>`);
+            });
+        }
+    
+        function renderStudentTable() {
+            const tbody = $("#bangSinhVien tbody");
+            tbody.empty();
+            const students = data[currentClassIndex].sinhVien;
+            students.forEach((student, index) => {
+                tbody.append(`
+                    <tr>
+                        <td class="px-4 py-2">${student.hoTen}</td>
+                        <td class="px-4 py-2">${student.maSV}</td>
+                        <td class="px-4 py-2">${student.ngaySinh}</td>
+                        <td class="px-4 py-2">
+                            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded" onclick="editStudent(${index})">Sửa</button>
+                            <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded" onclick="deleteStudent(${index})">Xóa</button>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+    
+        // Xử lý sự kiện khi chọn lớp từ dropdown
+        $("#lop").change(function() {
+            currentClassIndex = $(this).val();
+            renderStudentTable();
+        });
+    
+        // Hiển thị form thêm/sửa sinh viên
+        function showFormModal() {
+            $("#formSinhVienModal").removeClass("hidden");
+        }
+    
+        // Ẩn form thêm/sửa sinh viên
+        function hideFormModal() {
+            $("#formSinhVienModal").addClass("hidden");
+            $("#formSinhVien")[0].reset();
+            editIndex = -1;
+        }
+    
+        // Thêm hoặc cập nhật sinh viên
+        $("#formSinhVien").submit(function(event) {
+            event.preventDefault();
+            const hoTen = $("#hoTen").val();
+            const maSV = $("#maSV").val();
+            const ngaySinh = $("#ngaySinh").val();
+    
+            if (editIndex === -1) {
+                // Thêm sinh viên mới
+                data[currentClassIndex].sinhVien.push({ hoTen, maSV, ngaySinh });
+            } else {
+                // Cập nhật sinh viên
+                data[currentClassIndex].sinhVien[editIndex] = { hoTen, maSV, ngaySinh };
+            }
+            
+            updateData();
+            renderStudentTable();
+            hideFormModal();
+        });
+    
+        // Hủy form thêm/sửa sinh viên
+        $("#cancelBtn").click(hideFormModal);
+    
+        // Xử lý sự kiện thêm sinh viên
+        $("#addStudentBtn").click(function() {
+            editIndex = -1;
+            showFormModal();
+        });
+    
+        // Sửa sinh viên
+        window.editStudent = function(index) {
+            editIndex = index;
+            const student = data[currentClassIndex].sinhVien[index];
+            $("#hoTen").val(student.hoTen);
+            $("#maSV").val(student.maSV);
+            $("#ngaySinh").val(student.ngaySinh);
+            showFormModal();
+        };
+    
+        // Xóa sinh viên
+        window.deleteStudent = function(index) {
+            if (confirm("Bạn có chắc chắn muốn xóa sinh viên này không?")) {
+                data[currentClassIndex].sinhVien.splice(index, 1);
+                updateData();
+                renderStudentTable();
+            }
+        };
+    
+        // Cập nhật dữ liệu vào JSON file
+        function updateData() {
+            $.ajax({
+                url: "save.php",
+                method: "POST",
+                data: { data: JSON.stringify(data) },
+                success: function(response) {
+                    console.log("Data updated successfully");
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error updating data:", error);
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>
